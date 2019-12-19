@@ -9,7 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
     blockChoice = document.getElementById('block-choice'),
     btnExit = document.getElementById('btn-exit'),
     formCustomer = document.getElementById('form-customer'),
-    ordersTabel = document.getElementById('orders');
+    ordersTabel = document.getElementById('orders'),
+    modalOrder = document.getElementById('order_read'),
+    modalOrderActive = document.getElementById('order_active');
 
     const orders = [];
 
@@ -21,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
         orders.forEach( (order, i) => {
 
             ordersTabel.innerHTML += `
-            <tr class="order" data-number-order="${i}">
+            <tr class="order ${order.active ? 'taken' : ''}" data-number-order="${i}">
                 <td>${i + 1}</td>
                 <td>${order.title}</td>
                 <td class="${order.currency}"></td>
@@ -32,26 +34,86 @@ document.addEventListener('DOMContentLoaded', () => {
         
     }
 
+    //обработчик для события внутри модального окна
+    const handlerModal = (event) => {
+        const target = event.target;
+        const modal = target.closest('.order-modal');
+        const order = orders[modal.id];
+
+        //закрываем модальное окно на крестик
+        if(target.closest('.close') || target === modal ){
+            modal.style.display = 'none';
+        }
+
+        //получаем заказ при нажатии
+        if(target.classList.contains('get-order')){
+            order.active = true;
+            modal.style.display = 'none';
+            renderOrders();
+        }
+
+    }
+
+    //обработчик для открытия  модальгого окна
+    const openModal = (numberOrder) => {
+        const order = orders[numberOrder];
+        
+        //через деструктирезацию получили значения order
+        const { title, firstName, email, description, amount, currency, deadline , active = false} = order;
+
+        //провеляем активный ли заказ
+        const modal = active ? modalOrderActive : modalOrder;
+
+        //элементы форм 1 и 2
+        const firstNameBlock = modal.querySelector('.firstName'),
+              titleBlock = modal.querySelector('.modal-title'),
+              emailBlock = modal.querySelector('.email'),
+              descriptionBlock = modal.querySelector('.description'),
+              deadlineBlock = modal.querySelector('.deadline'),
+              currencyBlock = modal.querySelector('.currency_img'),
+              countBlock = modal.querySelector('.count'),
+              phoneBlock = modal.querySelector('.phone');
+
+              //заполняем формы
+              modal.id = numberOrder;
+              titleBlock.textContent = title;
+              firstNameBlock.textContent = firstName;
+              emailBlock.textContent = email;
+              emailBlock.href = 'mailto:' + email;
+              descriptionBlock.textContent = description;
+              deadlineBlock.textContent = deadline;
+              currencyBlock.className = 'currency_img'; // при каждом открытие сбрасываем img класс в исходное состояние
+              currencyBlock.classList.add(currency);
+              countBlock.textContent = amount;
+              phoneBlock ? phoneBlock.href = 'tel:' + phone : '' ;
+              
+
+
+        modal.style.display = 'flex';
+
+        modal.addEventListener('click', handlerModal);
+    }
+
     //обработчик фриланс - заказы
     ordersTabel.addEventListener('click', event => {
         const target = event.target;
         const targetOrder = target.closest('.order');
 
         if(targetOrder){
-            //открываем модальное окно
-            openModal();
+            openModal(targetOrder.dataset.numberOrder);
         }
-
-        console.log(orders[targetOrder.dataset.numberOrder]);
+  
     });
 
 
+    //обработка заказчика
     customer.addEventListener('click', () => {
         blockCustomer.style.display = 'block';
         blockChoice.style.display = 'none';
         btnExit.style.display = 'block';
     })
 
+    //обработка фрилансера
     freelancer.addEventListener('click', () => {
         blockFreelancer.style.display = 'block';
         renderOrders();

@@ -13,7 +13,19 @@ document.addEventListener('DOMContentLoaded', () => {
     modalOrder = document.getElementById('order_read'),
     modalOrderActive = document.getElementById('order_active');
 
-    const orders = [];
+    //получаем даные из local storage, если их нет то подготавливаем массив
+    const orders = JSON.parse(localStorage.getItem('freeOrders')) || [];
+
+    //сохранение в local storage
+    const toStorage = () => {
+        localStorage.setItem('freeOrders', JSON.stringify(orders));
+    }
+
+    //высчитываем дедлайн
+    const calcDeadline = (deadline) => {
+        const day = '10 дней';
+        return day;
+    }
 
     //отрисовка во фриланс таблице
     const renderOrders = () => {
@@ -27,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${i + 1}</td>
                 <td>${order.title}</td>
                 <td class="${order.currency}"></td>
-                <td>${order.deadline}</td>
+                <td>${calcDeadline(order.deadline)}</td>
             </tr>`;
 
         } );
@@ -45,11 +57,32 @@ document.addEventListener('DOMContentLoaded', () => {
             modal.style.display = 'none';
         }
 
-        //получаем заказ при нажатии
+        //получаем заказ
         if(target.classList.contains('get-order')){
             order.active = true;
             modal.style.display = 'none';
             renderOrders();
+            //сохраняем в localStorage
+            toStorage();
+        }
+
+        //отменяем заказ
+        if(target.id === 'capitulation' ){
+            order.active = false;
+            modal.style.display = 'none';
+            renderOrders();
+            //сохраняем в localStorage
+            toStorage();
+        }
+
+        //выполнили заказ
+        if(target.id === 'ready' ){
+            //удаляем из таблицы заказ
+            orders.splice(orders.indexOf(order), 1);
+            modal.style.display = 'none';
+            renderOrders();
+            //сохраняем в localStorage
+            toStorage();
         }
 
     }
@@ -81,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
               emailBlock.textContent = email;
               emailBlock.href = 'mailto:' + email;
               descriptionBlock.textContent = description;
-              deadlineBlock.textContent = deadline;
+              deadlineBlock.textContent = calcDeadline(order.deadline);
               currencyBlock.className = 'currency_img'; // при каждом открытие сбрасываем img класс в исходное состояние
               currencyBlock.classList.add(currency);
               countBlock.textContent = amount;
@@ -178,7 +211,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         //добавляем элементы формы заказа в массив
         orders.push(objElem);
-        console.dir(orders);
+
+        //сохраняем в localStorage
+        toStorage();
+
     });
 
    

@@ -11,7 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
     formCustomer = document.getElementById('form-customer'),
     ordersTabel = document.getElementById('orders'),
     modalOrder = document.getElementById('order_read'),
-    modalOrderActive = document.getElementById('order_active');
+    modalOrderActive = document.getElementById('order_active'),
+    headTabel = document.getElementById('headTabel');
 
     //получаем даные из local storage, если их нет то подготавливаем массив
     const orders = JSON.parse(localStorage.getItem('freeOrders')) || [];
@@ -21,10 +22,23 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('freeOrders', JSON.stringify(orders));
     }
 
+    //для склонения слов взависимости от числа (1 день 2 дня 5 дней)
+    const declOfNum = (number, titles) => number + ' ' + titles[(number % 100 > 4 && number % 100 < 20) ? 2 : 
+        [2, 0, 1, 1, 1, 2][(number % 10 < 5) ? number % 10 : 5]];
+
     //высчитываем дедлайн
-    const calcDeadline = (deadline) => {
-        const day = '10 дней';
-        return day;
+    const calcDeadline = (date) => {
+        const deadline = new Date(date);
+        const toDay = Date.now();
+        //сколько осталось (милисикунд)
+        const remaining = (deadline - toDay) / 1000 / 60 / 60;
+        //если меньше 2х дней то в часах
+        if( (remaining / 24) > 2){
+            return declOfNum(Math.floor(remaining / 24), ['день', 'дня', 'дней']);
+        }
+
+        return declOfNum(Math.floor(remaining), ['час', 'часа', 'часов']);
+        
     }
 
     //отрисовка во фриланс таблице
@@ -87,6 +101,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
     }
 
+    //сортировка обьектов в массиве
+    const sortOrder = (arr, propperty) => {
+        arr.sort( (a, b) => a[propperty] > b[propperty]  ? 1 : -1 );
+    }
+
+    //обраюотчик сортировка
+    headTabel.addEventListener('click', (event) => {
+        const target = event.target;
+        if(target.classList.contains('head-sort')){
+
+            if(target.id === 'taskSort'){
+                sortOrder(orders, 'title');
+            }
+
+            if(target.id === 'currensySort'){
+                sortOrder(orders, 'currensy');
+            }
+
+            if(target.id === 'deadlineSort'){
+                sortOrder(orders, 'deadline');
+            }
+
+            toStorage();
+            renderOrders();
+
+        }
+    });
+
     //обработчик для открытия  модальгого окна
     const openModal = (numberOrder) => {
         const order = orders[numberOrder];
@@ -114,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
               emailBlock.textContent = email;
               emailBlock.href = 'mailto:' + email;
               descriptionBlock.textContent = description;
-              deadlineBlock.textContent = calcDeadline(order.deadline);
+              deadlineBlock.textContent = calcDeadline(deadline);
               currencyBlock.className = 'currency_img'; // при каждом открытие сбрасываем img класс в исходное состояние
               currencyBlock.classList.add(currency);
               countBlock.textContent = amount;
@@ -142,6 +184,10 @@ document.addEventListener('DOMContentLoaded', () => {
     //обработка заказчика
     customer.addEventListener('click', () => {
         blockCustomer.style.display = 'block';
+        //минимальное значение даты заказа
+        const toDay = new Date().toISOString().substring(0,10);  
+        document.getElementById('deadline').min = toDay;
+
         blockChoice.style.display = 'none';
         btnExit.style.display = 'block';
     })
